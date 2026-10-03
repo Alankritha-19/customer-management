@@ -7,7 +7,9 @@ import { Dashboard } from './pages/Dashboard';
 import { Leads } from './pages/Leads';
 import { LeadDetail } from './pages/LeadDetail';
 import { Analytics } from './pages/Analytics';
+import { Portfolio } from './pages/Portfolio';
 import { CustomerPortal } from './pages/CustomerPortal';
+
 import { CustomerProfile } from './pages/CustomerProfile';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
@@ -100,8 +102,10 @@ export default function App() {
             <Route path="customers/:id" element={<LeadDetail />} />
             <Route path="leads" element={<Navigate to="/customers" replace />} />
             <Route path="leads/:id" element={<LeadDetail />} />
+            <Route path="portfolio" element={<Portfolio />} />
             <Route path="analytics" element={<Analytics />} />
           </Route>
+
 
           {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />

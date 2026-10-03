@@ -17,8 +17,10 @@ export const Sidebar = () => {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Customer Enquiries', path: '/customers', icon: Users },
+    { name: 'Portfolio Assets', path: '/portfolio', icon: Briefcase },
     { name: 'Analytics & Reports', path: '/analytics', icon: BarChart3 },
   ];
+
 
   return (
     <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 border-r border-slate-800 min-h-screen">

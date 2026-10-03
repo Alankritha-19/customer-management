@@ -10,7 +10,8 @@ import {
   Plus, 
   RefreshCw, 
   Search, 
-  ShieldCheck 
+  ShieldCheck,
+  Mic
 } from 'lucide-react';
 
 export function CustomerPortal() {
@@ -24,6 +25,8 @@ export function CustomerPortal() {
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [submissionMode, setSubmissionMode] = useState('text'); // 'text' | 'audio'
+  const [customerAudioFile, setCustomerAudioFile] = useState(null);
   const [formData, setFormData] = useState({
     owner_id: '',
     message: '',
@@ -31,6 +34,7 @@ export function CustomerPortal() {
     budget: '',
     notes: ''
   });
+
 
   const fetchData = async () => {
     try {
@@ -64,34 +68,58 @@ export function CustomerPortal() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.message.trim()) {
-      setError('Please enter your enquiry message.');
-      return;
-    }
-
     try {
       setSubmitting(true);
       setError(null);
-      const payload = {
-        owner_id: formData.owner_id ? parseInt(formData.owner_id) : null,
-        message: formData.message,
-        service_interest: formData.service_interest || null,
-        budget: formData.budget || null,
-        notes: formData.notes || null
-      };
 
-      const res = await api.post('/customer/enquiries', payload);
-      setEnquiries(prev => [res.data, ...prev]);
-      setSuccessMsg('Enquiry submitted successfully! We will review and respond soon.');
-      setFormData({
-        owner_id: owners[0]?.id || '',
-        message: '',
-        service_interest: '',
-        budget: '',
-        notes: ''
-      });
-      setShowModal(false);
-      setTimeout(() => setSuccessMsg(''), 5000);
+      if (submissionMode === 'audio') {
+        if (!customerAudioFile) {
+          setError('Please select an audio file or record a voice note.');
+          setSubmitting(false);
+          return;
+        }
+        const data = new FormData();
+        data.append('file', customerAudioFile);
+        if (formData.owner_id) {
+          data.append('owner_id', formData.owner_id);
+        }
+
+        const res = await api.post('/customer/enquiries/voice-note', data, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        setEnquiries(prev => [res.data, ...prev]);
+        setSuccessMsg('Voice note enquiry received! AI has processed your audio and notified our business team.');
+        setCustomerAudioFile(null);
+        setShowModal(false);
+        setTimeout(() => setSuccessMsg(''), 5000);
+      } else {
+        if (!formData.message.trim()) {
+          setError('Please enter your enquiry message.');
+          setSubmitting(false);
+          return;
+        }
+
+        const payload = {
+          owner_id: formData.owner_id ? parseInt(formData.owner_id) : null,
+          message: formData.message,
+          service_interest: formData.service_interest || null,
+          budget: formData.budget || null,
+          notes: formData.notes || null
+        };
+
+        const res = await api.post('/customer/enquiries', payload);
+        setEnquiries(prev => [res.data, ...prev]);
+        setSuccessMsg('Enquiry submitted successfully! We will review and respond soon.');
+        setFormData({
+          owner_id: owners[0]?.id || '',
+          message: '',
+          service_interest: '',
+          budget: '',
+          notes: ''
+        });
+        setShowModal(false);
+        setTimeout(() => setSuccessMsg(''), 5000);
+      }
     } catch (err) {
       console.error('Submission error:', err);
       setError(err.response?.data?.detail || 'Failed to submit enquiry.');
@@ -99,6 +127,7 @@ export function CustomerPortal() {
       setSubmitting(false);
     }
   };
+
 
   const filteredEnquiries = enquiries.filter(item => {
     const matchesFilter = filterStatus === 'ALL' || item.status === filterStatus;
@@ -240,6 +269,20 @@ export function CustomerPortal() {
                   "{enquiry.message}"
                 </div>
 
+                {enquiry.audio_url && (
+                  <div className="mb-3 p-2.5 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/50 rounded-lg">
+                    <div className="text-[10px] font-bold text-purple-700 dark:text-purple-300 uppercase flex items-center gap-1 mb-1">
+                      <Mic className="w-3 h-3" /> Voice Note Audio
+                    </div>
+                    <audio
+                      controls
+                      className="w-full h-8"
+                      src={enquiry.audio_url.startsWith('http') ? enquiry.audio_url : `http://localhost:8000${enquiry.audio_url}`}
+                    />
+                  </div>
+                )}
+
+
                 {enquiry.approved_response ? (
                   <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 rounded-xl p-3.5 mb-3">
                     <div className="flex items-center text-xs font-semibold text-emerald-700 dark:text-emerald-300 mb-1.5">
@@ -287,6 +330,31 @@ export function CustomerPortal() {
               </button>
             </div>
 
+            <div className="flex border-b border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setSubmissionMode('text')}
+                className={`flex-1 py-2.5 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+                  submissionMode === 'text'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                }`}
+              >
+                Typed Message
+              </button>
+              <button
+                type="button"
+                onClick={() => setSubmissionMode('audio')}
+                className={`flex-1 py-2.5 text-xs font-bold border-b-2 transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
+                  submissionMode === 'audio'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                }`}
+              >
+                <span>🎙️ Voice Note Clip</span>
+              </button>
+            </div>
+
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               {owners.length > 1 && (
                 <div>
@@ -308,48 +376,77 @@ export function CustomerPortal() {
                 </div>
               )}
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                  Service / Product of Interest
-                </label>
-                <input
-                  type="text"
-                  name="service_interest"
-                  placeholder="e.g. Enterprise Solution, Consultation"
-                  value={formData.service_interest}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+              {submissionMode === 'audio' ? (
+                <div className="space-y-3">
+                  <div className="p-3 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/50 rounded-lg text-xs text-purple-900 dark:text-purple-300 leading-relaxed">
+                    <span className="font-bold">🎙️ Voice Note Upload:</span> Upload an audio recording (.mp3, .wav, .m4a, .ogg) explaining what you need. AI will transcribe your message and extract your dates & requirements automatically!
+                  </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                  Estimated Budget (Optional)
-                </label>
-                <input
-                  type="text"
-                  name="budget"
-                  placeholder="e.g. $1,000 - $5,000"
-                  value={formData.budget}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                      Audio Voice File *
+                    </label>
+                    <input
+                      type="file"
+                      required
+                      accept="audio/*,.mp3,.wav,.m4a,.ogg,.opus,.webm"
+                      onChange={(e) => setCustomerAudioFile(e.target.files[0] || null)}
+                      className="w-full text-xs text-slate-600 dark:text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer border border-slate-300 dark:border-slate-700 rounded-lg p-1.5 bg-white dark:bg-slate-800"
+                    />
+                    {customerAudioFile && (
+                      <p className="text-[11px] text-emerald-600 font-semibold mt-1">
+                        ✓ Selected: {customerAudioFile.name} ({(customerAudioFile.size / 1024).toFixed(1)} KB)
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                      Service / Product of Interest
+                    </label>
+                    <input
+                      type="text"
+                      name="service_interest"
+                      placeholder="e.g. Enterprise Solution, Consultation"
+                      value={formData.service_interest}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                  Enquiry Message *
-                </label>
-                <textarea
-                  rows={4}
-                  required
-                  name="message"
-                  placeholder="Describe your requirements or questions..."
-                  value={formData.message}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                      Estimated Budget (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      name="budget"
+                      placeholder="e.g. $1,000 - $5,000"
+                      value={formData.budget}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                      Enquiry Message *
+                    </label>
+                    <textarea
+                      rows={4}
+                      required
+                      name="message"
+                      placeholder="Describe your requirements or questions..."
+                      value={formData.message}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </>
+              )}
+
 
               <div className="pt-2 flex items-center justify-end gap-3">
                 <button

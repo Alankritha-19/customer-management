@@ -83,7 +83,13 @@ def create_lead(db: Session, lead_in: LeadCreate, user_id: int) -> Lead:
         follow_up_at=lead_in.follow_up_at,
         response_status=ResponseStatus.DRAFT.value,
         user_id=user_id,
-        customer_id=lead_in.customer_id
+        customer_id=lead_in.customer_id,
+        budget=lead_in.budget,
+        timeline=lead_in.timeline,
+        requirements=lead_in.requirements,
+        audio_url=lead_in.audio_url,
+        transcription=lead_in.transcription,
+        matched_portfolio_id=lead_in.matched_portfolio_id
     )
     db.add(lead)
     db.commit()
@@ -101,7 +107,10 @@ def create_webhook_lead(db: Session, payload: WebhookLeadPayload) -> Lead:
         priority=LeadPriority.MEDIUM.value,
         follow_up_at=payload.follow_up_at,
         response_status=ResponseStatus.DRAFT.value,
-        user_id=payload.user_id
+        user_id=payload.user_id,
+        budget=payload.budget,
+        timeline=payload.timeline,
+        requirements=payload.requirements
     )
     db.add(lead)
     db.commit()
@@ -121,7 +130,11 @@ def create_customer_enquiry(
     db: Session,
     customer,
     message: str,
-    owner_id: Optional[int] = None
+    owner_id: Optional[int] = None,
+    budget: Optional[str] = None,
+    timeline: Optional[str] = None,
+    audio_url: Optional[str] = None,
+    transcription: Optional[str] = None
 ) -> Lead:
     from app.models.user import User, UserRole
 
@@ -142,12 +155,17 @@ def create_customer_enquiry(
         priority=LeadPriority.MEDIUM.value,
         response_status=ResponseStatus.DRAFT.value,
         user_id=target_owner_id,
-        customer_id=customer.id
+        customer_id=customer.id,
+        budget=budget,
+        timeline=timeline,
+        audio_url=audio_url,
+        transcription=transcription
     )
     db.add(enquiry)
     db.commit()
     db.refresh(enquiry)
     return enquiry
+
 
 def update_lead(db: Session, lead: Lead, lead_update: LeadUpdate) -> Lead:
     update_data = lead_update.model_dump(exclude_unset=True)

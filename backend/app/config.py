@@ -8,8 +8,20 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     GEMINI_API_KEY: str = ""
+    OPENAI_API_KEY: str = ""
     ENVIRONMENT: str = "development"
     CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
+    
+    # Zero-UI WhatsApp / Telegram Notification & Webhook Settings
+    TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_DEFAULT_CHAT_ID: str = ""
+    WHATSAPP_API_TOKEN: str = ""
+    WHATSAPP_PHONE_NUMBER_ID: str = ""
+    WHATSAPP_OWNER_PHONE: str = ""
+    WEBHOOK_VERIFY_TOKEN: str = "customer_crm_verify_token_2026"
+
+    # Audio uploads
+    AUDIO_UPLOAD_DIR: str = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads", "audio")
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"),
@@ -24,3 +36,5 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
 
 settings = Settings()
+os.makedirs(settings.AUDIO_UPLOAD_DIR, exist_ok=True)
+

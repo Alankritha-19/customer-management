@@ -14,7 +14,12 @@ import {
   Bot,
   Clock,
   Send,
-  XCircle
+  Mic,
+  Volume2,
+  ThumbsUp,
+  Smartphone,
+  ExternalLink,
+  Briefcase
 } from 'lucide-react';
 import api from '../api/client';
 import { StatusBadge, PriorityBadge, SourceBadge, AIProviderBadge, FollowUpBadge } from '../components/common/Badge';
@@ -44,6 +49,12 @@ export const LeadDetail = () => {
   const [savingStatus, setSavingStatus] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
 
+  // Zero-UI Approver states
+  const [pushingApproval, setPushingApproval] = useState(false);
+  const [simulatingWebhook, setSimulatingWebhook] = useState(false);
+  const [customEditInput, setCustomEditInput] = useState('');
+  const [showSimModal, setShowSimModal] = useState(false);
+
   const fetchLead = async () => {
     setLoading(true);
     try {
@@ -51,7 +62,6 @@ export const LeadDetail = () => {
       setLead(res.data);
       setEditableResponse(res.data.suggested_response || '');
       if (res.data.follow_up_at) {
-        // Format for datetime-local input (YYYY-MM-DDTHH:mm)
         const d = new Date(res.data.follow_up_at);
         const pad = (n) => String(n).padStart(2, '0');
         const localIso = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -80,7 +90,10 @@ export const LeadDetail = () => {
         category: res.data.category,
         priority: res.data.priority,
         intent: res.data.intent,
-        ai_summary: res.data.ai_summary
+        ai_summary: res.data.ai_summary,
+        budget: res.data.budget,
+        timeline: res.data.timeline,
+        requirements: res.data.requirements
       }));
       setAiProvider(res.data.ai_provider);
       setSaveSuccessMsg('AI Lead Analysis completed successfully!');
@@ -99,16 +112,19 @@ export const LeadDetail = () => {
       const res = await api.post(`/leads/${id}/generate-response`, {
         response_type: responseType,
         tone,
-        additional_instructions: customInstructions
+        additional_instructions: customInstructions,
+        include_portfolio_match: true
       });
       setEditableResponse(res.data.suggested_response);
       setLead(prev => ({
         ...prev,
         suggested_response: res.data.suggested_response,
-        response_status: res.data.response_status
+        response_status: res.data.response_status,
+        matched_portfolio_title: res.data.matched_portfolio_title,
+        matched_portfolio_url: res.data.matched_portfolio_url
       }));
       setAiProvider(res.data.ai_provider);
-      setSaveSuccessMsg(`AI ${responseType === 'follow_up' ? 'follow-up' : 'initial'} response generated!`);
+      setSaveSuccessMsg(`AI response generated with matching portfolio assets!`);
       setTimeout(() => setSaveSuccessMsg(''), 3000);
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to generate AI response.');
@@ -146,7 +162,7 @@ export const LeadDetail = () => {
   const setPresetFollowUp = (daysAhead) => {
     const d = new Date();
     d.setDate(d.getDate() + daysAhead);
-    d.setHours(10, 0, 0, 0); // set to 10:00 AM
+    d.setHours(10, 0, 0, 0);
     const pad = (n) => String(n).padStart(2, '0');
     const localIso = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
     setFollowUpDate(localIso);
@@ -161,8 +177,8 @@ export const LeadDetail = () => {
         response_status: newResponseStatus
       });
       setLead(res.data);
-      const actionLabel = newResponseStatus === 'APPROVED' ? 'approved' : 'saved';
-      setSaveSuccessMsg(`Response draft ${actionLabel} successfully!`);
+      const actionLabel = newResponseStatus === 'APPROVED' ? 'approved & ready to dispatch' : 'saved';
+      setSaveSuccessMsg(`Response draft ${actionLabel}!`);
       setTimeout(() => setSaveSuccessMsg(''), 3000);
     } catch {
       setError('Failed to save response.');
@@ -189,6 +205,53 @@ export const LeadDetail = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Zero-UI Push Notification to Business Owner
+  const handlePushApproval = async () => {
+    setPushingApproval(true);
+    setError('');
+    try {
+      const res = await api.post(`/leads/${id}/push-approval`);
+      setSaveSuccessMsg(`Approval notification sent to ${res.data.recipient} via ${res.data.channel}!`);
+      setLead(prev => ({ ...prev, last_notification_sent_at: new Date().toISOString() }));
+      setTimeout(() => setSaveSuccessMsg(''), 4000);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to dispatch approval notification.');
+    } finally {
+      setPushingApproval(false);
+    }
+  };
+
+  // Zero-UI Simulation (👍 or text edit)
+  const handleSimulateWebhookAction = async (actionText) => {
+    setSimulatingWebhook(true);
+    setError('');
+    try {
+      const res = await api.post('/webhooks/approval-action', {
+        lead_id: parseInt(id),
+        action_text: actionText
+      });
+      if (res.data.success) {
+        setLead(prev => ({
+          ...prev,
+          status: res.data.lead_status,
+          response_status: res.data.response_status,
+          suggested_response: res.data.final_response
+        }));
+        setEditableResponse(res.data.final_response);
+        setSaveSuccessMsg(`Zero-UI Action Executed: ${res.data.reply_to_owner}`);
+        setShowSimModal(false);
+        setCustomEditInput('');
+        setTimeout(() => setSaveSuccessMsg(''), 5000);
+      } else {
+        setError(res.data.reply_to_owner);
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Simulation webhook failed.');
+    } finally {
+      setSimulatingWebhook(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="py-24 text-center text-slate-500">
@@ -210,6 +273,10 @@ export const LeadDetail = () => {
     );
   }
 
+  const audioApiUrl = lead.audio_url 
+    ? (lead.audio_url.startsWith('http') ? lead.audio_url : `http://localhost:8000${lead.audio_url}`)
+    : null;
+
   return (
     <div className="space-y-6">
       {/* Top Header & Navigation */}
@@ -226,6 +293,11 @@ export const LeadDetail = () => {
               <h2 className="text-lg font-bold text-slate-900">{lead.name}</h2>
               <StatusBadge status={lead.status} />
               <PriorityBadge priority={lead.priority} />
+              {lead.audio_url && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200 flex items-center gap-1">
+                  <Mic className="w-3 h-3" /> Voice Note
+                </span>
+              )}
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
               Customer Enquiry #{lead.id} · Received via {lead.source}
@@ -257,10 +329,79 @@ export const LeadDetail = () => {
         </div>
       )}
 
-      {/* Main Grid: Left = Customer, Message & Follow-up, Right = AI Intelligence & Response Studio */}
+      {/* Main Grid: Left Column (5 Cols) vs Right Column (7 Cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column (5 Cols) */}
+        {/* Left Column */}
         <div className="lg:col-span-5 space-y-6">
+          {/* FEATURE 1: WhatsApp Voice Note Card (if voice note) */}
+          {lead.audio_url && (
+            <div className="bg-gradient-to-br from-purple-50 via-white to-indigo-50/40 rounded-xl border border-purple-200 p-5 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-purple-900 font-bold text-xs uppercase tracking-wider">
+                  <Volume2 className="w-4 h-4 text-purple-600" />
+                  <span>WhatsApp Voice Note Whisperer</span>
+                </div>
+                <span className="text-[10px] bg-purple-200/60 text-purple-800 font-semibold px-2 py-0.5 rounded-full">
+                  Audio Inbound
+                </span>
+              </div>
+
+              {/* HTML5 Audio Player */}
+              <div className="bg-white p-3 rounded-lg border border-purple-100 shadow-xs">
+                <audio controls className="w-full h-8" src={audioApiUrl}>
+                  Your browser does not support audio playback.
+                </audio>
+              </div>
+
+              {/* Transcription */}
+              {lead.transcription && (
+                <div className="space-y-1">
+                  <span className="text-[11px] font-bold text-purple-900 block">AI Speech-to-Text Transcription:</span>
+                  <div className="p-3 rounded-lg bg-white border border-purple-100 text-xs text-slate-700 leading-relaxed font-mono">
+                    "{lead.transcription}"
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* FEATURE 1: Extracted Project Constraints Card */}
+          {(lead.budget || lead.timeline || lead.requirements) && (
+            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>AI-Extracted Project Constraints</span>
+                </h3>
+                <span className="text-[10px] bg-indigo-50 text-indigo-700 font-semibold px-2 py-0.5 rounded">
+                  Whisper Parsed
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+                {lead.budget && (
+                  <div className="p-2.5 rounded-lg bg-emerald-50/70 border border-emerald-100">
+                    <span className="text-[10px] font-bold text-emerald-700 uppercase block">Extracted Budget</span>
+                    <span className="text-xs font-bold text-emerald-900 mt-0.5 block">{lead.budget}</span>
+                  </div>
+                )}
+                {lead.timeline && (
+                  <div className="p-2.5 rounded-lg bg-amber-50/70 border border-amber-100">
+                    <span className="text-[10px] font-bold text-amber-700 uppercase block">Target Timeline / Date</span>
+                    <span className="text-xs font-bold text-amber-900 mt-0.5 block">{lead.timeline}</span>
+                  </div>
+                )}
+              </div>
+
+              {lead.requirements && (
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-100 text-xs">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Scope & Requirements</span>
+                  <p className="text-slate-700 leading-relaxed">{lead.requirements}</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Customer Overview Card */}
           <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -289,7 +430,20 @@ export const LeadDetail = () => {
             </div>
           </div>
 
-          {/* Follow-up Management Card */}
+          {/* Original Customer Message Card */}
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Customer Message
+              </h3>
+              <span className="text-[11px] text-slate-400">Inbound message</span>
+            </div>
+            <div className="p-4 rounded-lg bg-slate-50 border border-slate-100 text-xs text-slate-800 leading-relaxed whitespace-pre-wrap font-mono">
+              {lead.message}
+            </div>
+          </div>
+
+          {/* Follow-up Reminder */}
           <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -321,16 +475,6 @@ export const LeadDetail = () => {
                 >
                   {savingFollowUp ? 'Saving...' : 'Set'}
                 </button>
-                {lead.follow_up_at && (
-                  <button
-                    onClick={() => handleSaveFollowUp(null)}
-                    disabled={savingFollowUp}
-                    title="Clear follow-up"
-                    className="p-1.5 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-500 rounded-lg transition-colors cursor-pointer"
-                  >
-                    <XCircle className="w-4 h-4" />
-                  </button>
-                )}
               </div>
 
               {/* Quick Presets */}
@@ -338,45 +482,146 @@ export const LeadDetail = () => {
                 <span className="text-[11px] font-medium text-slate-400">Presets:</span>
                 <button
                   onClick={() => setPresetFollowUp(1)}
-                  disabled={savingFollowUp}
-                  className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-medium transition-colors cursor-pointer"
+                  className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-medium cursor-pointer"
                 >
                   Tomorrow
                 </button>
                 <button
                   onClick={() => setPresetFollowUp(3)}
-                  disabled={savingFollowUp}
-                  className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-medium transition-colors cursor-pointer"
+                  className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-medium cursor-pointer"
                 >
                   +3 Days
                 </button>
                 <button
                   onClick={() => setPresetFollowUp(7)}
-                  disabled={savingFollowUp}
-                  className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-medium transition-colors cursor-pointer"
+                  className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-medium cursor-pointer"
                 >
                   Next Week
                 </button>
               </div>
             </div>
           </div>
-
-          {/* Original Customer Message Card */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Customer Message
-              </h3>
-              <span className="text-[11px] text-slate-400">Original text</span>
-            </div>
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-100 text-xs text-slate-800 leading-relaxed whitespace-pre-wrap font-mono">
-              {lead.message}
-            </div>
-          </div>
         </div>
 
-        {/* Right Column (7 Cols): AI Hub */}
+        {/* Right Column: AI Hub & Approver Studio */}
         <div className="lg:col-span-7 space-y-6">
+          {/* FEATURE 3: Zero-UI Approver (WhatsApp & Telegram) Banner Card */}
+          <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-xl p-5 shadow-md space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-indigo-600/60 border border-indigo-400/30 text-white">
+                  <Smartphone className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold flex items-center gap-2">
+                    Zero-UI WhatsApp & Telegram Approver
+                    {lead.response_status === 'APPROVED' && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                        <ThumbsUp className="w-3 h-3" /> Approved (👍)
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-[11px] text-slate-300">
+                    Push draft to owner's phone. Approve with 👍 or edit text directly via webhook without opening dashboard.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handlePushApproval}
+                  disabled={pushingApproval}
+                  className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  <Send className={`w-3.5 h-3.5 ${pushingApproval ? 'animate-spin' : ''}`} />
+                  <span>{pushingApproval ? 'Pushing...' : 'Push to Mobile'}</span>
+                </button>
+
+                <button
+                  onClick={() => setShowSimModal(!showSimModal)}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <ThumbsUp className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Simulate 👍 / Edit</span>
+                </button>
+              </div>
+            </div>
+
+            {/* In-app Simulator Panel */}
+            {showSimModal && (
+              <div className="p-4 bg-slate-800/90 rounded-lg border border-slate-700 space-y-3 text-xs">
+                <div className="flex items-center justify-between text-slate-300 font-bold">
+                  <span>📱 Simulate Inbound Owner WhatsApp/Telegram Response</span>
+                  <button onClick={() => setShowSimModal(false)} className="text-slate-400 hover:text-white">✕</button>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Simulate receiving an inbound message from the business owner to trigger zero-UI instant approval or reply revision:
+                </p>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleSimulateWebhookAction('👍')}
+                    disabled={simulatingWebhook}
+                    className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <ThumbsUp className="w-4 h-4" />
+                    Send 👍 (Instant Approve & Dispatch)
+                  </button>
+                </div>
+
+                <div className="pt-2 border-t border-slate-700/80 space-y-2">
+                  <label className="text-[11px] text-slate-300 font-semibold block">Or Simulate Custom Text Edit:</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={customEditInput}
+                      onChange={(e) => setCustomEditInput(e.target.value)}
+                      placeholder="e.g. Edit: Hi Sarah, here is our special $4,500 package."
+                      className="flex-1 px-3 py-1.5 text-xs rounded-lg bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <button
+                      onClick={() => handleSimulateWebhookAction(customEditInput || 'Edit: Revised reply via mobile')}
+                      disabled={simulatingWebhook}
+                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg text-xs cursor-pointer disabled:opacity-50"
+                    >
+                      Send Edit
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* FEATURE 2: Instant Portfolio Matchmaker Card */}
+          {(lead.matched_portfolio_title || lead.matched_portfolio_url) && (
+            <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-4 shadow-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs">
+                  <Briefcase className="w-4 h-4 text-emerald-600" />
+                  <span>Instant Portfolio Matchmaker (Auto-Attached)</span>
+                </div>
+                <span className="text-[10px] bg-emerald-200/80 text-emerald-900 font-bold px-2 py-0.5 rounded-full">
+                  Keyword Matched
+                </span>
+              </div>
+              <p className="text-xs text-slate-700">
+                Matched Case Study: <span className="font-bold text-slate-900">{lead.matched_portfolio_title}</span>
+              </p>
+              <a
+                href={lead.matched_portfolio_url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-emerald-700 hover:text-emerald-900 font-semibold underline"
+              >
+                <span>{lead.matched_portfolio_url}</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+              <p className="text-[11px] text-slate-500 italic">
+                ✓ This case study link was automatically appended to the suggested reply below.
+              </p>
+            </div>
+          )}
+
           {/* AI Analysis Card */}
           <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
@@ -389,7 +634,6 @@ export const LeadDetail = () => {
                   <p className="text-[11px] text-slate-400">Intent classification & synthesis</p>
                 </div>
               </div>
-
 
               <div className="flex items-center gap-2">
                 <AIProviderBadge provider={aiProvider || (lead.category ? 'Analyzed' : 'Ready')} />
@@ -451,16 +695,16 @@ export const LeadDetail = () => {
                   <span>Suggested Response Generator</span>
                   {lead.response_status && (
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-                      lead.response_status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                      lead.response_status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-bold' :
                       lead.response_status === 'EDITED' ? 'bg-amber-50 text-amber-700 border-amber-200' :
                       'bg-slate-100 text-slate-700 border-slate-200'
                     }`}>
-                      {lead.response_status}
+                      {lead.response_status === 'APPROVED' ? 'APPROVED & DISPATCHED' : lead.response_status}
                     </span>
                   )}
                 </h3>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  Review, customize and approve the AI draft before replying
+                  AI automatically inserts matching portfolio case studies based on project inquiry keywords
                 </p>
               </div>
 
@@ -508,7 +752,7 @@ export const LeadDetail = () => {
                   type="text"
                   value={customInstructions}
                   onChange={(e) => setCustomInstructions(e.target.value)}
-                  placeholder="e.g. follow up on yesterday's quote"
+                  placeholder="e.g. emphasize weekend availability"
                   className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -529,7 +773,7 @@ export const LeadDetail = () => {
                     setLead(prev => ({ ...prev, response_status: 'EDITED' }));
                   }
                 }}
-                placeholder="Click 'Generate Response' or 'Generate Follow-Up' to create an AI draft, or write your own..."
+                placeholder="Click 'Generate Response' to create an AI draft with matched portfolio links..."
                 className="w-full p-3.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-sans leading-relaxed text-slate-800 bg-slate-50/50"
               />
             </div>
@@ -543,7 +787,7 @@ export const LeadDetail = () => {
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Approve Response</span>
+                  <span>Approve & Dispatch</span>
                 </button>
 
                 <button
@@ -564,31 +808,6 @@ export const LeadDetail = () => {
                 >
                   <Copy className="w-3.5 h-3.5" />
                   <span>{copied ? 'Copied to Clipboard!' : 'Copy Response'}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Quick Status Workflow helper */}
-            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span className="text-slate-600 font-medium">Quick Status Update:</span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleStatusUpdate('CONTACTED')}
-                  className="px-2.5 py-1 rounded bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold cursor-pointer"
-                >
-                  Mark Contacted
-                </button>
-                <button
-                  onClick={() => handleStatusUpdate('QUALIFIED')}
-                  className="px-2.5 py-1 rounded bg-white border border-purple-300 text-purple-700 hover:bg-purple-50 font-semibold cursor-pointer"
-                >
-                  Mark Qualified
-                </button>
-                <button
-                  onClick={() => handleStatusUpdate('CONVERTED')}
-                  className="px-2.5 py-1 rounded bg-white border border-emerald-300 text-emerald-700 hover:bg-emerald-50 font-semibold cursor-pointer"
-                >
-                  Mark Converted
                 </button>
               </div>
             </div>

@@ -1,10 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from fastapi.staticfiles import StaticFiles
+import os
 from app.config import settings
 from app.database import engine, Base, run_safe_migrations
 import app.models # Register all models
-from app.routers import auth, leads, webhooks, analytics, customer
+from app.routers import auth, leads, webhooks, analytics, customer, portfolio
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,7 +23,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="AI Customer Management API",
     description="Production AI Customer Management and Enquiry Intelligence Platform with role-based access for Business Owners and Customers.",
-    version="2.0.0",
+    version="2.1.0",
     lifespan=lifespan
 )
 
@@ -34,12 +36,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount audio upload storage
+if os.path.exists(settings.AUDIO_UPLOAD_DIR):
+    app.mount("/uploads/audio", StaticFiles(directory=settings.AUDIO_UPLOAD_DIR), name="audio_uploads")
+
 # Include Routers
 app.include_router(auth.router)
 app.include_router(customer.router)
 app.include_router(leads.router)
+app.include_router(portfolio.router)
 app.include_router(webhooks.router)
 app.include_router(analytics.router)
+
 
 
 @app.get("/", tags=["System"])

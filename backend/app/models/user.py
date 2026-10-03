@@ -17,8 +17,15 @@ class User(Base):
     phone = Column(String(50), nullable=True)
     role = Column(String(50), default=UserRole.BUSINESS_OWNER.value, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
+    
+    # Zero-UI WhatsApp / Telegram Notification settings
+    telegram_chat_id = Column(String(100), nullable=True)
+    whatsapp_phone = Column(String(50), nullable=True)
+    notification_channel = Column(String(50), default="SIMULATED", nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
 
     # Relationship to enquiries owned by this business owner
     leads = relationship("Lead", foreign_keys="Lead.user_id", back_populates="owner", cascade="all, delete-orphan")
