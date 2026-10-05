@@ -7,7 +7,6 @@ import { Dashboard } from './pages/Dashboard';
 import { Leads } from './pages/Leads';
 import { LeadDetail } from './pages/LeadDetail';
 import { Analytics } from './pages/Analytics';
-import { Portfolio } from './pages/Portfolio';
 import { CustomerPortal } from './pages/CustomerPortal';
 
 import { CustomerProfile } from './pages/CustomerProfile';
@@ -19,8 +18,9 @@ const OwnerRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0b0205] text-[#ecdcc9]">
+        <div className="w-10 h-10 border-2 border-[rgba(245,230,211,0.15)] border-t-[#c8a47e] rounded-full animate-spin"></div>
+        <span className="mt-4 font-editorial tracking-luxury text-xs text-[#baa293] uppercase">Aurelia Private Hub</span>
       </div>
     );
   }
@@ -41,8 +41,9 @@ const CustomerRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0b0205] text-[#ecdcc9]">
+        <div className="w-10 h-10 border-2 border-[rgba(245,230,211,0.15)] border-t-[#c8a47e] rounded-full animate-spin"></div>
+        <span className="mt-4 font-editorial tracking-luxury text-xs text-[#baa293] uppercase">Aurelia Private Hub</span>
       </div>
     );
   }
@@ -102,7 +103,6 @@ export default function App() {
             <Route path="customers/:id" element={<LeadDetail />} />
             <Route path="leads" element={<Navigate to="/customers" replace />} />
             <Route path="leads/:id" element={<LeadDetail />} />
-            <Route path="portfolio" element={<Portfolio />} />
             <Route path="analytics" element={<Analytics />} />
           </Route>
 

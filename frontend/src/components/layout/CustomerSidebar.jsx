@@ -1,71 +1,99 @@
-import { Link, useLocation } from 'react-router-dom';
+import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { 
   MessageSquare, 
   User, 
   LogOut, 
-  Sparkles
+  Crown
 } from 'lucide-react';
 
 export function CustomerSidebar() {
-  const location = useLocation();
   const { user, logout } = useAuth();
 
   const navigation = [
-    { name: 'My Enquiries', href: '/portal', icon: MessageSquare },
-    { name: 'My Profile', href: '/portal/profile', icon: User },
+    { name: 'My Enquiries & Concierge', href: '/portal', icon: MessageSquare },
+    { name: 'Private Profile & Settings', href: '/portal/profile', icon: User },
   ];
 
   return (
-    <div className="flex flex-col w-64 bg-slate-900 border-r border-slate-800 h-screen sticky top-0">
-      <div className="flex items-center gap-3 px-6 h-16 border-b border-slate-800">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-          <Sparkles className="w-5 h-5" />
-        </div>
+    <aside className="w-68 shrink-0 min-h-screen p-4 flex flex-col justify-between">
+      {/* Warm Taupe Glass Container matching reference aesthetics */}
+      <div className="glass-panel-warm rounded-3xl h-full flex flex-col justify-between overflow-hidden shadow-2xl border border-[rgba(245,230,211,0.2)]">
+        
+        {/* Brand Header */}
         <div>
-          <span className="font-bold text-slate-100 text-base leading-tight block">Customer Portal</span>
-          <span className="text-[10px] uppercase font-semibold text-blue-400 tracking-wider">Client View</span>
-        </div>
-      </div>
+          <div className="p-6 border-b border-[rgba(245,230,211,0.12)] flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[rgba(235,214,195,0.25)] to-[rgba(142,116,103,0.3)] border border-[rgba(245,230,211,0.3)] flex items-center justify-center text-[#faf6f0] shadow-inner">
+              <Crown className="w-5 h-5 text-[#f3e7db]" />
+            </div>
+            <div>
+              <h1 className="font-editorial text-xl font-normal tracking-wide text-[#faf6f0] leading-none">
+                AURELIA
+              </h1>
+              <p className="text-[10px] font-sans-ui uppercase tracking-luxury text-[#c4ada0] mt-1">
+                Private Client Portal
+              </p>
+            </div>
+          </div>
 
-      <div className="flex-1 px-3 py-6 space-y-1">
-        {navigation.map((item) => {
-          const isActive = location.pathname === item.href;
-          return (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                isActive
-                  ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-              }`}
+          {/* Navigation Items */}
+          <div className="p-4 space-y-1.5">
+            <div className="px-3 py-2 text-[10px] font-medium tracking-luxury uppercase text-[#a99587]">
+              Client Sanctuary
+            </div>
+            {navigation.map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  key={item.name}
+                  to={item.href}
+                  end={item.href === '/portal'}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-medium tracking-wide transition-all ${
+                      isActive
+                        ? 'bg-[rgba(245,230,211,0.18)] text-[#faf6f0] border border-[rgba(245,230,211,0.3)] shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] font-semibold'
+                        : 'text-[#baa293] hover:text-[#faf6f0] hover:bg-[rgba(255,255,255,0.06)] border border-transparent'
+                    }`
+                  }
+                >
+                  <Icon className="w-4 h-4 shrink-0 opacity-85" />
+                  <span>{item.name}</span>
+                </NavLink>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Client Footer */}
+        <div className="p-4">
+          <div className="p-3 rounded-2xl bg-[rgba(255,255,255,0.04)] border border-[rgba(245,230,211,0.1)] flex items-center justify-between">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="w-9 h-9 rounded-xl bg-[rgba(200,164,126,0.2)] border border-[rgba(245,230,211,0.25)] text-[#faf6f0] flex items-center justify-center font-editorial text-sm font-semibold shrink-0">
+                {user?.name ? user.name[0].toUpperCase() : 'C'}
+              </div>
+              <div className="overflow-hidden text-left">
+                <p className="text-xs font-medium text-[#faf6f0] truncate">
+                  {user?.name || 'Private Client'}
+                </p>
+                <p className="text-[10px] text-[#a99587] tracking-wider uppercase truncate">
+                  {user?.email}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={logout}
+              title="Sign out"
+              className="p-2 rounded-xl text-[#baa293] hover:text-[#fca5a5] hover:bg-[rgba(180,28,56,0.15)] border border-transparent hover:border-[rgba(244,63,94,0.2)] transition-colors cursor-pointer shrink-0"
             >
-              <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-              {item.name}
-            </Link>
-          );
-        })}
-      </div>
-
-      <div className="p-4 border-t border-slate-800">
-        <div className="flex items-center gap-3 px-2 mb-3">
-          <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs uppercase">
-            {user?.name ? user.name[0] : 'C'}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-slate-200 truncate">{user?.name || 'Customer'}</p>
-            <p className="text-[11px] text-slate-500 truncate">{user?.email}</p>
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
-        <button
-          onClick={logout}
-          className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-        >
-          <LogOut className="w-4 h-4" />
-          Sign Out
-        </button>
+
       </div>
-    </div>
+    </aside>
   );
 }
+
+export default CustomerSidebar;

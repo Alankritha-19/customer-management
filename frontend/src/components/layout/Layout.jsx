@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { Modal } from '../common/Modal';
 import api from '../../api/client';
+import { Mic, FileText } from 'lucide-react';
 
 export const Layout = () => {
   const location = useLocation();
@@ -23,12 +24,11 @@ export const Layout = () => {
   const [audioFile, setAudioFile] = useState(null);
 
   const getPageTitle = (pathname) => {
-    if (pathname === '/') return 'Dashboard Overview';
-    if (pathname === '/customers' || pathname === '/leads') return 'Customer Enquiries';
-    if (pathname.startsWith('/customers/') || pathname.startsWith('/leads/')) return 'Customer Enquiry Workspace';
-    if (pathname === '/portfolio') return 'Portfolio Assets & Matchmaker';
-    if (pathname === '/analytics') return 'Analytics & Reports';
-    return 'CustomerAI Hub';
+    if (pathname === '/') return 'Executive Intelligence';
+    if (pathname === '/customers' || pathname === '/leads') return 'Private Client Inquiries';
+    if (pathname.startsWith('/customers/') || pathname.startsWith('/leads/')) return 'Client Dossier & AI Studio';
+    if (pathname === '/analytics') return 'Performance & Conversion Telemetry';
+    return 'Aurelia Command';
   };
 
   const handleCreateLead = async (e) => {
@@ -38,7 +38,7 @@ export const Layout = () => {
     try {
       if (entryMode === 'audio') {
         if (!audioFile) {
-          setCreateError('Please select an audio file or voice note clip.');
+          setCreateError('Please upload an audio voice note file.');
           setCreating(false);
           return;
         }
@@ -74,23 +74,22 @@ export const Layout = () => {
         }
       }
     } catch (err) {
-      setCreateError(err.response?.data?.detail || 'Failed to create enquiry. Please check input fields.');
+      setCreateError(err.response?.data?.detail || 'Failed to register enquiry. Please check input fields.');
     } finally {
       setCreating(false);
     }
   };
 
-
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen text-[#f5ede6]">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Topbar 
           title={getPageTitle(location.pathname)} 
           onNewLeadClick={() => setIsNewLeadOpen(true)}
         />
-        <main className="flex-1 p-6 overflow-y-auto">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 px-6 py-4 overflow-y-auto">
+          <div className="max-w-7xl mx-auto pb-12">
             <Outlet />
           </div>
         </main>
@@ -100,82 +99,86 @@ export const Layout = () => {
       <Modal
         isOpen={isNewLeadOpen}
         onClose={() => setIsNewLeadOpen(false)}
-        title="Add Customer Enquiry"
-        maxWidth="max-w-lg"
+        title="Record Client Enquiry"
+        maxWidth="max-w-xl"
       >
-        <div className="flex border-b border-slate-200 mb-4">
+        <div className="flex p-1 rounded-xl bg-[rgba(255,255,255,0.04)] border border-[rgba(245,230,211,0.1)] mb-5">
           <button
             type="button"
             onClick={() => setEntryMode('text')}
-            className={`flex-1 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+            className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
               entryMode === 'text'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
+                ? 'bg-[rgba(245,230,211,0.18)] text-[#faf6f0] border border-[rgba(245,230,211,0.25)] shadow-xs font-semibold'
+                : 'text-[#baa293] hover:text-[#faf6f0]'
             }`}
           >
-            Standard Text Enquiry
+            <FileText className="w-3.5 h-3.5" />
+            <span>Standard Inscription</span>
           </button>
           <button
             type="button"
             onClick={() => setEntryMode('audio')}
-            className={`flex-1 py-2 text-xs font-bold border-b-2 transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
               entryMode === 'audio'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
+                ? 'bg-[rgba(245,230,211,0.18)] text-[#faf6f0] border border-[rgba(245,230,211,0.25)] shadow-xs font-semibold'
+                : 'text-[#baa293] hover:text-[#faf6f0]'
             }`}
           >
-            <span>🎙️ WhatsApp Voice Note Whisperer</span>
+            <Mic className="w-3.5 h-3.5 text-[#c8a47e]" />
+            <span>Voice Note Intake</span>
           </button>
         </div>
 
         <form onSubmit={handleCreateLead} className="space-y-4">
           {createError && (
-            <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700">
+            <div className="p-3.5 rounded-xl bg-[rgba(180,28,56,0.2)] border border-[rgba(244,63,94,0.3)] text-xs text-[#fca5a5]">
               {createError}
             </div>
           )}
 
           {entryMode === 'audio' ? (
             <div className="space-y-4">
-              <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-lg text-xs text-indigo-900 leading-relaxed">
-                <span className="font-bold">🎙️ Voice Note AI Whisperer:</span> Upload an incoming audio message (.mp3, .wav, .m4a, .ogg). AI will transcribe it, extract budget & dates, match your portfolio case studies, and draft a response.
+              <div className="p-3.5 bg-[rgba(200,164,126,0.08)] border border-[rgba(245,230,211,0.15)] rounded-xl text-xs text-[#edd8c4] leading-relaxed">
+                <span className="font-semibold text-[#faf6f0]">🎙️ Private Audio Intake:</span> Upload an incoming voice memo (.mp3, .wav, .m4a). The AI will transcribe the audio, detect client intent & budget, and compose a bespoke draft.
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Upload Voice Note Audio Clip *</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#baa293] mb-1.5">
+                  Voice Note Audio Clip *
+                </label>
                 <input
                   type="file"
                   required
                   accept="audio/*,.mp3,.wav,.m4a,.ogg,.opus,.webm"
                   onChange={(e) => setAudioFile(e.target.files[0] || null)}
-                  className="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer border border-slate-300 rounded-lg p-1.5 bg-white"
+                  className="w-full text-xs text-[#baa293] file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[rgba(245,230,211,0.15)] file:text-[#faf6f0] hover:file:bg-[rgba(245,230,211,0.25)] cursor-pointer border border-[rgba(245,230,211,0.15)] rounded-xl p-2 bg-[rgba(15,5,10,0.6)]"
                 />
                 {audioFile && (
-                  <p className="text-[11px] text-emerald-600 font-semibold mt-1">
-                    ✓ Selected: {audioFile.name} ({(audioFile.size / 1024).toFixed(1)} KB)
+                  <p className="text-[11px] text-[#a3e3bd] font-medium mt-1.5 flex items-center gap-1">
+                    <span>✓ Loaded:</span> {audioFile.name} ({(audioFile.size / 1024).toFixed(1)} KB)
                   </p>
                 )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Customer Name (Optional)</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#baa293] mb-1.5">Client Name (Optional)</label>
                   <input
                     type="text"
                     value={newLeadForm.name}
                     onChange={(e) => setNewLeadForm({ ...newLeadForm, name: e.target.value })}
-                    placeholder="Auto-detected if left blank"
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Auto-inferred if blank"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl glass-input"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Customer Email (Optional)</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#baa293] mb-1.5">Client Email (Optional)</label>
                   <input
                     type="email"
                     value={newLeadForm.email}
                     onChange={(e) => setNewLeadForm({ ...newLeadForm, email: e.target.value })}
-                    placeholder="prospect@example.com"
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="client@prestige.com"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl glass-input"
                   />
                 </div>
               </div>
@@ -184,99 +187,97 @@ export const Layout = () => {
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Customer Name *</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#baa293] mb-1.5">Client Full Name *</label>
                   <input
                     type="text"
                     required
                     value={newLeadForm.name}
                     onChange={(e) => setNewLeadForm({ ...newLeadForm, name: e.target.value })}
-                    placeholder="e.g. Alex Morgan"
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g. Lady Vivienne Vance"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl glass-input"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Customer Email *</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#baa293] mb-1.5">Client Email *</label>
                   <input
                     type="email"
                     required
                     value={newLeadForm.email}
                     onChange={(e) => setNewLeadForm({ ...newLeadForm, email: e.target.value })}
-                    placeholder="alex@company.com"
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="vivienne@atelier.com"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl glass-input"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Phone (Optional)</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#baa293] mb-1.5">Telephone</label>
                   <input
                     type="text"
                     value={newLeadForm.phone}
                     onChange={(e) => setNewLeadForm({ ...newLeadForm, phone: e.target.value })}
-                    placeholder="+1 (555) 000-0000"
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="+1 (555) 019-2834"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl glass-input"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Source Channel</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#baa293] mb-1.5">Channel</label>
                   <select
                     value={newLeadForm.source}
                     onChange={(e) => setNewLeadForm({ ...newLeadForm, source: e.target.value })}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl glass-input"
                   >
-                    <option value="WEBSITE">Customer Portal / Web</option>
-                    <option value="INSTAGRAM">Instagram DM</option>
-                    <option value="WHATSAPP">WhatsApp</option>
-                    <option value="MANUAL">Direct / Manual</option>
-                    <option value="OTHER">Other Channel</option>
+                    <option value="WEBSITE">Private Portal / Web</option>
+                    <option value="INSTAGRAM">Instagram Direct</option>
+                    <option value="WHATSAPP">WhatsApp Business</option>
+                    <option value="MANUAL">Direct Concierge</option>
+                    <option value="OTHER">Other Private Referrals</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Initial Priority</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#baa293] mb-1.5">Priority</label>
                   <select
                     value={newLeadForm.priority}
                     onChange={(e) => setNewLeadForm({ ...newLeadForm, priority: e.target.value })}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl glass-input"
                   >
                     <option value="LOW">Low</option>
                     <option value="MEDIUM">Medium</option>
-                    <option value="HIGH">High</option>
-                    <option value="URGENT">Urgent</option>
+                    <option value="HIGH">High Priority</option>
+                    <option value="URGENT">Immediate / Urgent</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Customer Enquiry Message *</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#baa293] mb-1.5">Client Message & Requirements *</label>
                 <textarea
                   required
                   rows="4"
                   value={newLeadForm.message}
                   onChange={(e) => setNewLeadForm({ ...newLeadForm, message: e.target.value })}
-                  placeholder="Enter customer message or enquiry details..."
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                  placeholder="Detail the client's bespoke inquiry or creative brief..."
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl glass-input resize-none"
                 />
               </div>
             </>
           )}
 
-
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[rgba(245,230,211,0.1)]">
             <button
               type="button"
               onClick={() => setIsNewLeadOpen(false)}
-              className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              className="btn-glass-secondary px-4 py-2.5 text-xs font-medium rounded-xl"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={creating}
-              className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+              className="btn-glass-primary px-5 py-2.5 text-xs font-semibold rounded-xl"
             >
-              {creating ? 'Saving...' : 'Create Enquiry'}
+              {creating ? 'Inscribing...' : 'Record Enquiry'}
             </button>
           </div>
         </form>
@@ -284,4 +285,3 @@ export const Layout = () => {
     </div>
   );
 };
-

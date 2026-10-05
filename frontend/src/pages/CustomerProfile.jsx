@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
-import { User, Mail, Phone, Building, CheckCircle2, AlertCircle, Save, Lock } from 'lucide-react';
+import { User, Mail, Phone, Building, CheckCircle2, AlertCircle, Save, Lock, ShieldCheck } from 'lucide-react';
 
 export function CustomerProfile() {
   const { user, updateUser } = useAuth();
@@ -38,12 +38,12 @@ export function CustomerProfile() {
 
       const res = await api.put('/customer/profile', payload);
       updateUser(res.data);
-      setSuccessMsg('Profile updated successfully!');
+      setSuccessMsg('Private client profile successfully updated.');
       setFormData(prev => ({ ...prev, password: '' }));
       setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err) {
       console.error('Failed to update profile:', err);
-      setError(err.response?.data?.detail || 'Failed to update profile.');
+      setError(err.response?.data?.detail || 'Failed to update client profile.');
     } finally {
       setLoading(false);
     }
@@ -52,106 +52,114 @@ export function CustomerProfile() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">My Profile</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Manage your personal account details and contact information.
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[rgba(200,164,126,0.18)] border border-[rgba(245,230,211,0.25)] text-[#f3e7db] text-[10px] font-sans-ui uppercase tracking-luxury mb-2">
+          <ShieldCheck className="w-3 h-3 text-[#c8a47e]" />
+          Accredited Identity
+        </div>
+        <h1 className="font-editorial text-3xl sm:text-4xl font-normal text-[#faf6f0]">
+          Client Profile & Credentials
+        </h1>
+        <p className="text-xs text-[#baa293] font-light mt-1">
+          Manage your verified communication channels and private credentials.
         </p>
       </div>
 
       {error && (
-        <div className="flex items-center p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 rounded-xl text-rose-700 dark:text-rose-300 text-sm">
-          <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0" />
+        <div className="p-4 rounded-2xl bg-[rgba(180,28,56,0.2)] border border-[rgba(244,63,94,0.3)] text-xs text-[#fca5a5] flex items-center gap-3">
+          <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
       {successMsg && (
-        <div className="flex items-center p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 rounded-xl text-emerald-700 dark:text-emerald-300 text-sm">
-          <CheckCircle2 className="w-5 h-5 mr-3 flex-shrink-0" />
+        <div className="p-4 rounded-2xl bg-[rgba(74,157,110,0.2)] border border-[rgba(74,157,110,0.3)] text-xs text-[#a3e3bd] flex items-center gap-3">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+      <div className="glass-panel-elevated rounded-3xl border border-[rgba(245,230,211,0.18)] shadow-2xl p-7 relative">
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[rgba(245,230,211,0.3)] to-transparent" />
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-              Full Name
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#baa293] mb-1.5">
+              Full Legal Name
             </label>
             <div className="relative">
-              <User className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+              <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#baa293]" />
               <input
                 type="text"
                 name="name"
                 required
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl glass-input"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-              Email Address (Cannot be changed)
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#baa293] mb-1.5">
+              Accredited Email (Immutable)
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+              <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#baa293] opacity-60" />
               <input
                 type="email"
                 disabled
                 value={user?.email || ''}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-500 dark:text-slate-400 cursor-not-allowed"
+                className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl glass-input opacity-60 cursor-not-allowed"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-              Phone Number
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#baa293] mb-1.5">
+              Telephone Number
             </label>
             <div className="relative">
-              <Phone className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+              <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#baa293]" />
               <input
                 type="tel"
                 name="phone"
-                placeholder="+1 (555) 000-0000"
+                placeholder="+1 (555) 019-2834"
                 value={formData.phone}
                 onChange={handleChange}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl glass-input"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-              Company / Organization (Optional)
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#baa293] mb-1.5">
+              Enterprise / Estate Name (Optional)
             </label>
             <div className="relative">
-              <Building className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+              <Building className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#baa293]" />
               <input
                 type="text"
                 name="company"
-                placeholder="Acme Corp"
+                placeholder="House of Vance"
                 value={formData.company}
                 onChange={handleChange}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl glass-input"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-              Change Password (Leave blank to keep current)
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#baa293] mb-1.5">
+              Update Passcode (Leave vacant to retain current)
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+              <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#baa293]" />
               <input
                 type="password"
                 name="password"
-                placeholder="Enter new password..."
+                placeholder="Inscribe new secure passcode..."
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl glass-input"
               />
             </div>
           </div>
@@ -160,10 +168,10 @@ export function CustomerProfile() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl shadow transition-colors"
+              className="btn-glass-primary px-6 py-2.5 rounded-xl text-xs font-semibold"
             >
-              <Save className="w-4 h-4 mr-2" />
-              {loading ? 'Saving...' : 'Save Profile Changes'}
+              <Save className="w-4 h-4 mr-2 text-[#c8a47e]" />
+              {loading ? 'Committing...' : 'Commit Changes'}
             </button>
           </div>
         </form>
@@ -171,3 +179,5 @@ export function CustomerProfile() {
     </div>
   );
 }
+
+export default CustomerProfile;

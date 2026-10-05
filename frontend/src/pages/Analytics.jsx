@@ -33,9 +33,9 @@ export const Analytics = () => {
 
   if (loading) {
     return (
-      <div className="py-24 text-center text-slate-500">
-        <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-3 text-indigo-600" />
-        <p className="text-sm font-semibold">Aggregating MySQL Analytics...</p>
+      <div className="py-28 text-center text-[#baa293]">
+        <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-3 text-[#c8a47e]" />
+        <p className="font-editorial text-base tracking-wide text-[#ecdcc9]">Synthesizing Executive Analytics...</p>
       </div>
     );
   }
@@ -51,104 +51,107 @@ export const Analytics = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       {/* Top Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-slate-900">Customer Intelligence & Analytics</h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Real-time pipeline metrics and customer conversion data from MySQL
+          <h2 className="font-editorial text-2xl sm:text-3xl font-normal text-[#faf6f0]">
+            Executive Performance & Conversion Telemetry
+          </h2>
+          <p className="text-xs text-[#a99587] font-light mt-0.5">
+            Real-time pipeline metrics and client conversion telemetry from MySQL
           </p>
         </div>
         <button
           onClick={fetchAnalytics}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-700 shadow-xs transition-colors cursor-pointer"
+          className="btn-glass-secondary px-3.5 py-2 rounded-xl text-xs font-medium gap-2 cursor-pointer"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
-          <span>Refresh Data</span>
+          <RefreshCw className="w-3.5 h-3.5 text-[#c8a47e]" />
+          <span>Sync Analytics</span>
         </button>
       </div>
 
       {/* KPI Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
-          title="Total Customers & Inquiries"
+          title="Total Client Dossiers"
           value={kpis.total_leads}
           icon={Users}
-          color="indigo"
+          subtext="Inscribed client inquiries"
         />
         <StatsCard
           title="Qualification Rate"
           value={`${kpis.qualification_rate}%`}
           icon={Target}
           subtext={`${kpis.qualified_leads + kpis.converted_leads} of ${kpis.total_leads} qualified`}
-          color="purple"
         />
         <StatsCard
           title="Conversion Win Rate"
           value={`${kpis.conversion_rate}%`}
           icon={CheckCircle}
-          subtext={`${kpis.converted_leads} converted clients`}
-          color="emerald"
+          subtext={`${kpis.converted_leads} confirmed commissions`}
         />
         <StatsCard
-          title="Lost Inquiries"
+          title="Closed Inquiries"
           value={kpis.lost_leads}
           icon={TrendingUp}
-          subtext="Unqualified or closed enquiries"
-          color="rose"
+          subtext="Archived or non-retained"
         />
       </div>
 
       {/* 2-Column Analytics Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Status Pipeline Funnel */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-indigo-600" />
-            <span>Enquiry Status Distribution</span>
+        {/* Status Pipeline Funnel with restrained luxury palette */}
+        <div className="glass-panel rounded-3xl border border-[rgba(245,230,211,0.12)] p-6 space-y-4">
+          <h3 className="font-editorial text-xl font-normal text-[#faf6f0] flex items-center gap-2.5">
+            <BarChart3 className="w-4 h-4 text-[#c8a47e]" />
+            <span>Inquiry Status Distribution</span>
           </h3>
 
           <div className="space-y-4 pt-2">
-            {data?.status_breakdown?.map((item) => (
-              <div key={item.label} className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className="text-slate-700">{item.label}</span>
-                  <span className="text-slate-900">{item.count} enquiries ({item.percentage}%)</span>
+            {data?.status_breakdown?.map((item) => {
+              // Restrained palette: ivory, champagne, muted beige, burgundy, subtle warm accent
+              const barColor = 
+                item.label === 'CONVERTED' ? 'bg-[#faf6f0]' :
+                item.label === 'QUALIFIED' ? 'bg-[#ecdcc9]' :
+                item.label === 'CONTACTED' ? 'bg-[#baa293]' :
+                item.label === 'NEW' ? 'bg-[#c8a47e]' : 'bg-[#7a192c]';
+
+              return (
+                <div key={item.label} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[#ecdcc9] font-medium">{item.label}</span>
+                    <span className="text-[#faf6f0] font-sans-ui">{item.count} <span className="text-[#a99587] font-light">({item.percentage}%)</span></span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+                      style={{ width: `${item.percentage}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full h-3 rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${
-                      item.label === 'CONVERTED' ? 'bg-emerald-500' :
-                      item.label === 'QUALIFIED' ? 'bg-purple-500' :
-                      item.label === 'CONTACTED' ? 'bg-amber-500' :
-                      item.label === 'NEW' ? 'bg-blue-500' : 'bg-rose-400'
-                    }`}
-                    style={{ width: `${item.percentage}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
-        {/* Lead Acquisition Channels */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <PieChart className="w-4 h-4 text-indigo-600" />
-            <span>Customer Acquisition Channels</span>
+        {/* Lead Acquisition Channels with monochromatic luxury gradient */}
+        <div className="glass-panel rounded-3xl border border-[rgba(245,230,211,0.12)] p-6 space-y-4">
+          <h3 className="font-editorial text-xl font-normal text-[#faf6f0] flex items-center gap-2.5">
+            <PieChart className="w-4 h-4 text-[#c8a47e]" />
+            <span>Channel Acquisition Breakdown</span>
           </h3>
 
           <div className="space-y-4 pt-2">
             {data?.source_breakdown?.map((item) => (
               <div key={item.label} className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className="text-slate-700">{item.label}</span>
-                  <span className="text-slate-900">{item.count} enquiries ({item.percentage}%)</span>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-[#ecdcc9] font-medium">{item.label}</span>
+                  <span className="text-[#faf6f0] font-sans-ui">{item.count} <span className="text-[#a99587] font-light">({item.percentage}%)</span></span>
                 </div>
-                <div className="w-full h-3 rounded-full bg-slate-100 overflow-hidden">
+                <div className="w-full h-2 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-indigo-600"
+                    className="h-full rounded-full bg-gradient-to-r from-[rgba(200,164,126,0.6)] to-[rgba(245,230,211,0.85)]"
                     style={{ width: `${item.percentage}%` }}
                   />
                 </div>
@@ -159,29 +162,29 @@ export const Analytics = () => {
       </div>
 
       {/* 7-Day Trend Chart */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-        <div className="flex items-center justify-between mb-4">
+      <div className="glass-panel rounded-3xl border border-[rgba(245,230,211,0.12)] p-6 shadow-xl">
+        <div className="flex items-center justify-between mb-5">
           <div>
-            <h3 className="text-sm font-bold text-slate-900">Daily Customer Enquiry Volume</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Captured enquiries across last 7 calendar days</p>
+            <h3 className="font-editorial text-xl font-normal text-[#faf6f0]">Daily Inscription Trajectory</h3>
+            <p className="text-xs text-[#a99587] mt-0.5 font-light">Captured client inquiries over rolling 7 days</p>
           </div>
         </div>
 
-        <div className="h-44 flex items-end justify-between gap-3 pt-4 border-b border-slate-100">
+        <div className="h-44 flex items-end justify-between gap-3 pt-4 border-b border-[rgba(245,230,211,0.08)]">
           {data?.trend_7d?.map((item, idx) => {
             const maxCount = Math.max(...data.trend_7d.map(d => d.count), 5);
             const heightPercent = Math.max((item.count / maxCount) * 100, 8);
 
             return (
               <div key={idx} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
-                <div className="text-[11px] font-bold text-indigo-600">
+                <div className="text-[11px] font-semibold text-[#f3e7db] opacity-0 group-hover:opacity-100 transition-opacity">
                   {item.count}
                 </div>
                 <div 
                   style={{ height: `${heightPercent}%` }} 
-                  className="w-full max-w-[48px] rounded-t-md bg-indigo-600 group-hover:bg-indigo-700 transition-all"
+                  className="w-full max-w-[48px] rounded-t-lg bg-gradient-to-t from-[rgba(142,116,103,0.35)] to-[rgba(235,214,195,0.75)] group-hover:to-[#faf6f0] border-t border-[rgba(255,255,255,0.35)] transition-all"
                 />
-                <span className="text-[11px] font-semibold text-slate-500 mt-1">{item.date}</span>
+                <span className="text-[10px] font-sans-ui text-[#baa293] mt-1.5">{item.date}</span>
               </div>
             );
           })}
@@ -190,4 +193,3 @@ export const Analytics = () => {
     </div>
   );
 };
-
