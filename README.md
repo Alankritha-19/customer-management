@@ -9,12 +9,12 @@ A full-stack mini-CRM built for small business, freelancers, and local service p
 4. **Pipeline & Analytics**: Tracks customers through a visual pipeline (NEW -> CONTACTED -> QUALIFIED -> CONVERTED/LOST) with live MySQL analytics dashboards.
 
 # Tech Stack
-**Backend**: Python, FastAPI, SQLAlchemy, PyMySQL, Pydantic, PyJWT, Bcrypt
-**Frontend**: React, Vite, Tailwind CSS, React Router, Axios, Lucide React
-**Database**: MySQL 8.0
+- **Backend**: Python, FastAPI, SQLAlchemy, PyMySQL, Pydantic, PyJWT, Bcrypt
+- **Frontend**: React, Vite, Tailwind CSS, React Router, Axios, Lucide React
+- **Database**: MySQL 8.0
 
 # Security & Architecture Notes
-**Passwords**: Securely hashed using Bcrypt.
-**Auth**: Stateless JWT Bearer tokens protect private endpoints.
-**SQL Injection Safety**: Handled entirely via SQLAlchemy ORM parameterized statements.
-**Human-in-the-Loop**: The system never sends messages automatically; human approval is always required.
+- **Passwords**: Securely hashed using Bcrypt.
+- **Auth**: Stateless JWT Bearer tokens protect private endpoints.
+- **SQL Injection Safety**: Handled entirely via SQLAlchemy ORM parameterized statements.
+- **Human-in-the-Loop**: The system never sends messages automatically; human approval is always required.
